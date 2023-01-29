@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Copyright 2020 Google LLC
+# Copyright 2022 Orix Au Yeung
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,26 +22,26 @@ DOMAIN='reddit.com'
 TARGETTAGS='tags1'
 NETWORK='default'
 FREQUENCY='0 */1 * * *'
+REGION='us-central1'
+TIMEZONE='America/Vancouver'
 
-gcloud run deploy "${DOMAIN_FW_NAME}" \
+gcloud beta run jobs create "${DOMAIN_FW_NAME}" \
   --project "${PROJECT_ID}" \
-  --platform "managed" \
-  --region "us-central1" \
+  --region "${REGION}" \
   --image "gcr.io/${PROJECT_ID}/openfwusingdomain" \
   --service-account "openfwusingdomain@${PROJECT_ID}.iam.gserviceaccount.com" \
-  --update-env-vars "^;^project=${PROJECT_ID};fwrulename=${DOMAIN_FW_NAME};priority=${PRIORITY};rules=${RULES};domain=${DOMAIN};targettags=${TARGETTAGS};network=${NETWORK}" \
-  --no-allow-unauthenticated
+  --set-env-vars "^;^project=${PROJECT_ID};fwrulename=${DOMAIN_FW_NAME};priority=${PRIORITY};rules=${RULES};domain=${DOMAIN};targettags=${TARGETTAGS};network=${NETWORK}"
 
 # Scheduler Job Creation
 # Setup the Cloud Scheduler to invoke the deployed Cloud Run Service periodically to refresh the f/w rule with changes in the A record of the domain name.
 
-## Grant the Cloud Run Invoker (roles/run.invoker) role to the calling service identity on the receiving service.
-gcloud run services add-iam-policy-binding ${DOMAIN_FW_NAME} --member=serviceAccount:openfwusingdomain2@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.invoker --platform=managed --region=us-central1
+# Grant the Cloud Run Invoker (roles/run.invoker) role to the calling service identity on the receiving service.
+gcloud beta run jobs add-iam-policy-binding ${DOMAIN_FW_NAME} --member=serviceAccount:openfwusingdomain2@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.invoker --region="${REGION}"
 
-## Retrieve the Service URL
-SERVICE_URL=$(gcloud run services describe ${DOMAIN_FW_NAME} --platform=managed --region=us-central1 | grep Traffic: | cut -d' ' -f2-)
+# Retrieve the Service URL
+SERVICE_URL="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${DOMAIN_FW_NAME}:run"
 
-## Create the Cloud Scheduler Job 
-## Modify the schedule frequency, default is every 1 hour.
-## Supported Time Zones - https://cloud.google.com/dataprep/docs/html/Supported-Time-Zone-Values_66194188
-gcloud beta scheduler jobs create http ${DOMAIN_FW_NAME}-job --schedule "${FREQUENCY}" --time-zone "Asia/Seoul" --http-method=POST --uri=${SERVICE_URL} --oidc-service-account-email=openfwusingdomain2@${PROJECT_ID}.iam.gserviceaccount.com --oidc-token-audience=${SERVICE_URL}
+# Create the Cloud Scheduler Job
+# Modify the schedule frequency, default is every 1 hour.
+# Supported Time Zones - https://cloud.google.com/dataprep/docs/html/Supported-Time-Zone-Values_66194188
+gcloud scheduler jobs create http ${DOMAIN_FW_NAME}-job --location "${REGION}" --schedule "${FREQUENCY}" --time-zone "${TIMEZONE}" --http-method=POST --uri=${SERVICE_URL} --oauth-service-account-email=openfwusingdomain2@${PROJECT_ID}.iam.gserviceaccount.com --oauth-token-scope "https://www.googleapis.com/auth/cloud-platform"

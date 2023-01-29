@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Orix Au Yeung
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,21 @@
 package main
 
 import (
-        "fmt"
-        "log"
-        "net/http"
-        "os"
-        "os/exec"
+	"log"
+	"os"
+	"os/exec"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-        log.Print("openFWUsingDomainName: received a request")
-
-        cmd := exec.CommandContext(r.Context(), "/bin/sh", "./script.sh")
-        cmd.Stderr = os.Stderr
-        out, err := cmd.Output()
-        if err != nil {
-                w.WriteHeader(500)
-        }
-        w.Write(out)
-}
-
 func main() {
-        log.Print("openFWUsingDomainName: starting server...")
+	log.Print("openFWUsingDomainName: received a request")
 
-        http.HandleFunc("/", handler)
+	cmd := exec.Command("/bin/sh", "./script.sh")
+	cmd.Stderr = os.Stderr
 
-        port := os.Getenv("PORT")
-        if port == "" {
-                port = "8080"
-        }
-
-        log.Printf("openFWUsingDomainName: listening on %s", port)
-        log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	out, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print(out)
+	log.Print("openFWUsingDomainName: fulfilled the request")
 }
