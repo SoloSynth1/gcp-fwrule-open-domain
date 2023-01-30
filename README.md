@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+*⚠️Note: This is a fork from [google/gcp-fwrule-open-domain](https://github.com/google/gcp-fwrule-open-domain), which is now archived. Any unmodified content from the original fork is owned by Google LLC and made public for use under Apache 2.0 License.⚠️*
+
 # GCP Cloud Run Jobs module for using a domain name as a f/w rule source
 
 Containerized BASH script for creating and updating a firewall rule using a domain name as the source ip for a firewall rule.
-
-This is a fork from [google/gcp-fwrule-open-domain](https://github.com/google/gcp-fwrule-open-domain), which is now archived. Any unmodified content from the original fork is owned by Google LLC and made public for use under Apache 2.0 License. 
 
 ## Improvements made in this fork
 1. **Lower CPU/RAM consumption**: Make use of Cloud Run Jobs (in Preview), remove the need to create a server listening to incoming HTTP requests.
